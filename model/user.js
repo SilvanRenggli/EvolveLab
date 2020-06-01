@@ -9,7 +9,8 @@ const Creature = new mongoose.Schema({
     speed: Number,
     strength: Number,
     transition_time: Number,
-    depth: Number
+    depth: Number,
+    username: String
 })
 
 module.exports = mongoose.model("creatures", Creature);
