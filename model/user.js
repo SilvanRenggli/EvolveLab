@@ -10,7 +10,7 @@ const Creature = new mongoose.Schema({
     strength: Number,
     transition_time: Number,
     depth: Number,
-    username: String
+    owner: String
 })
 
 module.exports = mongoose.model("creatures", Creature);
