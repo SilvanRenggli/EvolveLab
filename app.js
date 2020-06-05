@@ -71,7 +71,7 @@ app.post("/update_enemy", async (req, res) => {
             }else{
                 await Creature.update(
                     {"_id" : id}, 
-                    {$inc: {"winratio" : 1 }});
+                    {$set: {"winratio" : winratio }});
             }
         }else{
             winratio -= 1;
@@ -82,7 +82,7 @@ app.post("/update_enemy", async (req, res) => {
             }else{
                 await Creature.update(
                     {"_id" : id}, 
-                    {$inc: {"winratio" : -1 }});
+                    {$set: {"winratio" : winratio }});
             }
         }
         res.send("hello")
