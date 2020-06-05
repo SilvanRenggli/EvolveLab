@@ -1,17 +1,10 @@
 const mongoose = require("mongoose");
 
-const Creature = new mongoose.Schema({
-    StateMachine: Array,
-    direction_change_time: Number,
-    health: Number,
+const User = new mongoose.Schema({
     name: String,
-    nr_of_states: Number,
-    speed: Number,
-    strength: Number,
-    transition_time: Number,
-    depth: Number,
-    owner: String,
-    power: Number
+    deepest: Number,
+    kills: Number,
+    score: Number
 })
 
-module.exports = mongoose.model("creatures", Creature);
+module.exports = mongoose.model("users", User)
