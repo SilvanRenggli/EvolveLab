@@ -38,7 +38,7 @@ app.get("/calc_user_score", async (req, res) => {
                 _id : "$owner",
                 score: {$sum : {$multiply :["$depth", {$add: ["$kills", {"$literal" : 1}]}]}},
                 deepest : {$max : "$depth"},
-                kills: {$sum : "kills"}}},  
+                kills: {$sum : "$kills"}}},  
             {$sort: {score: -1}}
         ])
         .exec()
