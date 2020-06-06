@@ -37,10 +37,12 @@ app.get("/calc_user_score", async (req, res) => {
             {$group: {
                 _id : "$owner",
                 score: {$sum : {$multiply :[
-                    {$multiply: ["$depth", {"$literal" : 2}]},
+                    {$multiply: ["$depth", "$depth"]},
                     {$add: ["$kills", {"$literal" : 1}]}]}},
                 deepest : {$max : "$depth"},
-                kills: {$sum : "$kills"}}},  
+                kills : {$sum : "$kills"},
+                creatures : {$sum: 1} 
+            }},  
             {$sort: {score: -1}}
         ])
         .exec()
@@ -57,14 +59,14 @@ app.get("/calc_user_score", async (req, res) => {
 
 app.post("/update_enemy", async (req, res) => {
     console.log("called_update_enemy")
-    try{
-        const id = req.body["id"];
-        var winratio = req.body["winratio"];
-        var depth = req.body["depth"]
+    const id = req.body["id"];
+    var winratio = req.body["winratio"];
+    var depth = req.body["depth"]
+    Creature.find({depth: depth}).countDocuments().exec(async function (err, count) {
         if (req.body["won"]){
             await Creature.update({"_id" : id},{$inc: {"kills": 1}})
             winratio += 1
-            if(winratio > 2){
+            if(winratio > 2 && count > 1){
                 await Creature.update(
                     {"_id" : id}, 
                     {$set: {"depth" : depth + 1, "winratio" : -2}});
@@ -75,7 +77,7 @@ app.post("/update_enemy", async (req, res) => {
             }
         }else{
             winratio -= 1;
-            if(winratio < -2 && req.body["depth"] != 0){
+            if(winratio < -2 && depth > 1 && count > 1){
                 await Creature.update(
                     {"_id" : id}, 
                     {$set: {"depth" : depth - 1, "winratio" : 2}});
@@ -86,10 +88,7 @@ app.post("/update_enemy", async (req, res) => {
             }
         }
         res.send("hello")
-    } catch(err){
-        res.send({message: err})
-        console.log(err)
-    }
+    }).catch(err)
 });
 
 app.get("/load_creature", async (req, res) => {
