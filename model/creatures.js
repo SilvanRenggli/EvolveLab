@@ -14,7 +14,11 @@ const Creature = new mongoose.Schema({
     original_depth: Number,
     owner: String,
     kills: Number,
-    winratio: Number 
+    winratio: Number,
+    crystalls: Number,
+    crystall_countdown: Number,
+    badges: Array,
+    dna: {owner: String, id:String} 
 })
 
 module.exports = mongoose.model("creatures", Creature)

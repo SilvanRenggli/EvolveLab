@@ -12,6 +12,9 @@ app.use(express.json());
 app.post("/create_creature", async (req, res) => {
     try{
         const creature = new Creature(req.body);
+        creature["crystalls"] = 0;
+        creature["crystall_countdown"] = 3;
+        creature["dna"] = {}
         await creature.save();
         res.send(creature)
     } catch(err){
@@ -60,34 +63,49 @@ app.get("/calc_user_score", async (req, res) => {
 app.post("/update_enemy", async (req, res) => {
     console.log("called_update_enemy")
     const id = req.body["id"];
-    var winratio = req.body["winratio"];
     var depth = req.body["depth"]
+    var player_badges = req.body["badges"]
     Creature.find({depth: depth}).countDocuments().exec(async function (err, count) {
-        if (req.body["won"]){
-            await Creature.update({"_id" : id},{$inc: {"kills": 1}})
-            winratio += 1
-            if(winratio > 2 && count > 1){
-                await Creature.update(
-                    {"_id" : id}, 
-                    {$set: {"depth" : depth + 1, "winratio" : -2}});
+        Creature.findOne({"_id": id}).exec(async function (err, creature){
+            badges = req.body["badges"]
+            if (req.body["won"]){
+                if (badges.length){
+                    creature.badges.push(badges.sort().pop())
+                } 
+                creature.kills += 1;
+                creature.crystall_countdown -= 1;
+                creature.winratio += 1;
+                if(creature.winratio > 2 && count > 1){
+                    await Creature.update(
+                        {"_id" : id}, 
+                        {$set: {"depth" : depth + 1, "winratio" : -2, "kills": creature.kills, "crystall_countdown": creature.crystall_countdown, "badges" : creature.badges}});
+                }else{
+                    await Creature.update(
+                        {"_id" : id}, 
+                        {$set: {"winratio" : creature.winratio, "kills": creature.kills, "crystall_countdown": creature.crystall_countdown, "badges" : creature.badges}});
+                }
+                if(creature.crystall_countdown < 1){
+                    await Creature.update(
+                        {"_id" : id},
+                        {$set: {"crystalls" : creature.crystalls + 1, "crystall_countdown" : 3}});
+                }
             }else{
-                await Creature.update(
-                    {"_id" : id}, 
-                    {$set: {"winratio" : winratio }});
+                creature.badges.sort()
+                creature.badges.pop()
+                creature.winratio -= 1
+                creature.crystalls = 0
+                if(creature.winratio < -2 && depth > 1 && count > 1){
+                    await Creature.update(
+                        {"_id" : id}, 
+                        {$set: {"depth" : depth - 1, "winratio" : 2, "crystalls": creature.crystalls, "badges" : creature.badges}});
+                }else{
+                    await Creature.update(
+                        {"_id" : id}, 
+                        {$set: {"winratio" : creature.winratio, "crystalls": creature.crystalls, "badges" : creature.badges }});
+                }
             }
-        }else{
-            winratio -= 1;
-            if(winratio < -2 && depth > 1 && count > 1){
-                await Creature.update(
-                    {"_id" : id}, 
-                    {$set: {"depth" : depth - 1, "winratio" : 2}});
-            }else{
-                await Creature.update(
-                    {"_id" : id}, 
-                    {$set: {"winratio" : winratio }});
-            }
-        }
-        res.send("hello")
+            res.send(creature)
+        }) 
     }).catch(err)
 });
 
@@ -100,6 +118,24 @@ app.get("/load_creature", async (req, res) => {
     var random = Math.floor(Math.random() * count)
   
     Creature.findOne({depth: depth}).skip(random)
+    .exec()
+    .then(doc => {
+        console.log(doc)
+        res.status(200).json(doc);
+    })
+    .catch(err)
+  })
+})
+
+app.get("/load_crystall_creature", async (req, res) => {
+
+    var depth = req.body["depth"];
+    Creature.find({depth: depth, crystalls: { $gt: 0}}).countDocuments().exec(function (err, count) {
+
+    // Get a random entry
+    var random = Math.floor(Math.random() * count)
+  
+    Creature.findOne({depth: depth, crystalls: { $gt: 0}}).skip(random)
     .exec()
     .then(doc => {
         console.log(doc)
