@@ -75,7 +75,7 @@ app.post("/update_enemy", async (req, res) => {
                 creature.kills += 1;
                 creature.crystall_countdown -= 1;
                 creature.winratio += 1;
-                if(creature.winratio > 2 && count > 1){
+                if(creature.winratio > 9 && count > 1){
                     await Creature.update(
                         {"_id" : id}, 
                         {$set: {"depth" : depth + 1, "winratio" : -2, "kills": creature.kills, "crystall_countdown": creature.crystall_countdown, "badges" : creature.badges}});
@@ -97,7 +97,7 @@ app.post("/update_enemy", async (req, res) => {
                 if(creature.winratio < -2 && depth > 1 && count > 1){
                     await Creature.update(
                         {"_id" : id}, 
-                        {$set: {"depth" : depth - 1, "winratio" : 2, "crystalls": creature.crystalls, "badges" : creature.badges}});
+                        {$set: {"depth" : depth - 1, "winratio" : 9, "crystalls": creature.crystalls, "badges" : creature.badges}});
                 }else{
                     await Creature.update(
                         {"_id" : id}, 
