@@ -127,6 +127,20 @@ app.get("/load_creature", async (req, res) => {
   })
 })
 
+app.get("/check_end", async (req, res) => {
+
+    var depth = req.body["depth"];
+    Creature.findOne({depth: depth}).exec(function (err, doc) {
+        if(doc != null){
+            console.log("end not reached");
+            res.send("false");
+        }else{
+            console.log("end reached")
+            res.send("true");
+        }
+  }).catch(err)
+})
+
 app.get("/load_crystall_creature", async (req, res) => {
 
     var depth = req.body["depth"];
