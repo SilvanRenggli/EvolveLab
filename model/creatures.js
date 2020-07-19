@@ -18,6 +18,7 @@ const Creature = new mongoose.Schema({
     crystalls: Number,
     crystall_countdown: Number,
     badges: Array,
+    type: String,
     dna: {owner: String, id:String} 
 })
 
