@@ -62,7 +62,7 @@ app.get("/calc_user_score", async (req, res) => {
 app.get("/get_strongest", async (req, res) => {
     var depth = req.body["depth"]
     try{
-        Creature.find({depth: depth, winratio: {$gt: 0}})
+        Creature.find({depth: depth})
         .sort({winratio: -1})
         .limit(3)
         .exec()
