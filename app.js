@@ -59,6 +59,23 @@ app.get("/calc_user_score", async (req, res) => {
     }
 });
 
+app.get("/get_strongest", async (req, res) => {
+    var depth = req.body["depth"]
+    try{
+        Creature.find({depth: depth, winratio: {$gt: 0}})
+        .sort({winratio: -1})
+        .limit(3)
+        .exec()
+        .then(doc => {
+            console.log(doc)
+            res.status(200).json(doc);
+        })
+    } catch(err){
+        res.send({message: err})
+        console.log(err)
+    }
+});
+
 
 app.post("/update_enemy", async (req, res) => {
     console.log("called_update_enemy")
@@ -75,7 +92,7 @@ app.post("/update_enemy", async (req, res) => {
                 creature.kills += 1;
                 creature.crystall_countdown -= 1;
                 creature.winratio += 1;
-                if(creature.winratio > 9 && count > 1){
+                if(false && creature.winratio > 9 && count > 1){ //Don't use Promotion anymore
                     await Creature.update(
                         {"_id" : id}, 
                         {$set: {"depth" : depth + 1, "winratio" : -2, "kills": creature.kills, "crystall_countdown": creature.crystall_countdown, "badges" : creature.badges}});
@@ -94,7 +111,7 @@ app.post("/update_enemy", async (req, res) => {
                 creature.badges.pop()
                 creature.winratio -= 1
                 creature.crystalls = 0
-                if(creature.winratio < -2 && depth > 1 && count > 1){
+                if(false && creature.winratio < -2 && depth > 1 && count > 1){ // Don't use Demotion anymore
                     await Creature.update(
                         {"_id" : id}, 
                         {$set: {"depth" : depth - 1, "winratio" : 9, "crystalls": creature.crystalls, "badges" : creature.badges}});
