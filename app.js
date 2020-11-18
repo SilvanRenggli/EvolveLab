@@ -237,10 +237,13 @@ app.post("/update_enemy", authenticateToken, async (req, res) => {
                     $inc : { "kills" : 1 , "battlePoints" : 1, "crystals" : 1} })
             }
         }else{
+            var creature = await Creature.findOne({_id : id})
+            var badges = creature.badges
+            badges = badges.sort()
+            badges.pop()
             await Creature.findOneAndUpdate( { _id : id }, {
                 $inc : { "battlePoints" : -1 },
-                $set : {"crystals" : 0},
-                $pop : { "badges" : 1 }
+                $set : {"crystals" : 0, "badges" : badges}
             })
         }
         res.sendStatus(200)
