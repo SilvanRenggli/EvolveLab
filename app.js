@@ -184,6 +184,17 @@ app.get("/get_scores", async (req, res) => {
     }
 });
 
+app.get("/get_creatures", async (req, res) => {
+    //calculates user scores
+    try {
+        const creatures = await Creature.find({}).sort({depth: -1})
+        res.send(creatures).status(200)
+    }catch(e){
+        console.log(e)
+        res.sendStatus(500)
+    }
+});
+
 app.get("/get_depth_info", authenticateToken, async (req, res) => {
 
     const depth = req.body.depth
@@ -210,7 +221,7 @@ app.get("/get_depth_info", authenticateToken, async (req, res) => {
         ])
 
         //add the top three creatures to the body
-        depthInfo.topCreatures = await Creature.find({ depth: depth, battlePoints: { $gte: 10 } }).sort({ battlePoints: -1 }).limit(3)
+        depthInfo.topCreatures = await Creature.find({ depth: depth, battlePoints: { $gte: 5 } }).sort({ battlePoints: -1 }).limit(3)
 
         res.send(depthInfo).status(200)
     }catch(e){
