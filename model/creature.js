@@ -78,6 +78,32 @@ const Creature = new mongoose.Schema({
         minlength: 1,
         maxlength: 30
     },
+    killerId: {
+        type: String,
+        required: [true]
+    },
+    killerName: {
+        type: String,
+        required: [true],
+        minlength: 1,
+        maxlength: 30
+    },
+    love: {
+        type: Array,
+        required: [true]
+    },
+    hate: {
+        type: Array,
+        required: [true]
+    },
+    style: {
+        type: Array,
+        require: [true]
+    },
+    comments: {
+        type: Array,
+        required: [true]
+    }
 })
 
 module.exports = mongoose.model("creatures", Creature)

@@ -25,6 +25,10 @@ const User = new mongoose.Schema({
     unlockedCreatures: {
         type: Array,
         required: true
+    },
+    loginCounter: {
+        type: Number,
+        required: true
     }
 })
 

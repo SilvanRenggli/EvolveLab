@@ -21,18 +21,20 @@ const VERSION = process.env.VERSION
 app.use(express.json());
 
 app.post('/login', async (req, res) => {
-    const user = await User.findOne({name: req.body.name})
+    var user = await User.findOne({name: req.body.name})
     if (VERSION != req.body.version) return res.status(400).send('Version too old')
     if(user == null){
         return res.status(404).send('cannot find user')
     }
     try{
         if (await bcrypt.compare(req.body.password, user.password)){
-            
             const username = {username: user.name}
             const accessToken = generateAccessToken(username)
             const refreshToken = jwt.sign(username, process.env.REFRESH_TOKEN_SECRET)
-            res.json({accessToken: accessToken,refreshToken: refreshToken})
+            user = await User.findOneAndUpdate( {name: req.body.name }, {
+                $inc : { "loginCounter" : 1 } },
+                {new: true})
+            res.json({accessToken: accessToken,refreshToken: refreshToken, loginCounter: user.loginCounter, dna: user.DNAPoints, creatures: user.unlockedCreatures})
             const token = new Token({token: refreshToken})
             await token.save()
             res.status(200).send()
@@ -40,7 +42,8 @@ app.post('/login', async (req, res) => {
         } else {
             res.sendStatus(403)
         }
-    }catch{
+    }catch (e){
+        console.log(e)
         res.status(500).send()
     }
 })
@@ -64,7 +67,7 @@ app.delete('/logout', async (req, res) => {
 
 app.post("/store_creature", authenticateToken, async (req, res) => {
     //stores a new creature
-    const creature = new Creature(req.body)
+    const creature = new Creature(req.body.creature)
     if (creature.owner !== req.username.username) { return res.sendStatus(403) }
     try{
         await creature.save()
@@ -146,7 +149,7 @@ app.get("/load_user_data", authenticateToken, async(req, res) => {
     }
 })
 
-app.get("/load_enemy", async(req, res) => {
+app.get("/load_enemy", authenticateToken, async(req, res) => {
     //loads all the user data from the server
     try{
         const filter = { _id: req.body.id }
@@ -266,17 +269,20 @@ app.post("/update_enemy", authenticateToken, async (req, res) => {
 });
 
 //Middleware
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1] //only get the token from the header
     if (token == null) return res.sendStatus(401)
-    
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, username) => {
         if (err) return res.send().status(403)
         req.username = username
-        next()
     })
+    const data = await User.findOne({name: req.username.username})
+    if (req.body.loginCounter == null) return res.send().status(403)
+    if (data.loginCounter > req.body.loginCounter) return res.send().status(403)
+    next()
 }
+
 
 function generateAccessToken(username) {
     return jwt.sign(username, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30m' })
