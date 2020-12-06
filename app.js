@@ -122,6 +122,63 @@ app.post("/update_user_data", authenticateToken, async(req, res) => {
 
 }) 
 
+app.post("/update_creature_reaction", authenticateToken, async(req, res) => {
+    try{
+        const reaction = req.body.reaction
+        const username = req.username.username
+        const creatureId = req.body.creatureId
+        const new_reaction = req.body.new_reaction
+
+        
+        if (new_reaction){ 
+            switch(reaction){
+
+                case "love":
+                    await Creature.update({_id: creatureId}, { $push: {"love": username} } )
+                    res.status(201).send()
+                    break
+                
+                case "hate":
+                    await Creature.update({_id: creatureId}, { $push: {"hate": username} } )
+                    res.status(201).send()
+                    break
+
+                case "idea":
+                    await Creature.update({_id: creatureId}, { $push: {"idea": username} } )
+                    res.status(201).send()
+                    break
+                }
+
+
+        } else{ 
+            console.log("remove")
+
+            switch(reaction){
+
+                case "love":
+                    await Creature.update({_id: creatureId}, { $pull: {"love": username} } )
+                    res.status(201).send()
+                    break
+                
+                case "hate":
+                    await Creature.update({_id: creatureId}, { $pull: {"hate": username} } )
+                    res.status(201).send()
+                    break
+
+                case "idea":
+                    await Creature.update({_id: creatureId}, { $pull: {"idea": username} } )
+                    res.status(201).send()
+                    break
+                }
+
+        }
+    }catch(e){
+        console.log(e)
+        res.status(500).send()
+    }
+
+})
+
 function checkUserUpdate( newUserData, oldUserData) {
     if( oldUserData == null) return true
     return (
@@ -188,8 +245,8 @@ app.get("/get_scores", async (req, res) => {
 });
 
 app.get("/get_creatures", async (req, res) => {
-    //calculates user scores
     try {
+        console.log("listening to depths")
         const creatures = await Creature.find({}).sort({depth: -1})
         res.send(creatures).status(200)
     }catch(e){

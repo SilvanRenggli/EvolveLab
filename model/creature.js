@@ -96,7 +96,7 @@ const Creature = new mongoose.Schema({
         type: Array,
         required: [true]
     },
-    style: {
+    idea: {
         type: Array,
         require: [true]
     },
