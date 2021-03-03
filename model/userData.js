@@ -8,7 +8,15 @@ const UserData = new mongoose.Schema({
         maxlength: 30,
         minlength: 1
     },
-    depth: {
+    map: {
+        type: Array,
+        required: true
+    },
+    map_row: {
+        type: Number,
+        required: true
+    },
+    map_col: {
         type: Number,
         required: true
     },
@@ -25,11 +33,35 @@ const UserData = new mongoose.Schema({
         type: Array,
         required: true
     },
-    crystals: {
+    storeOptions: {
+        type: Array,
+        required: true
+    },
+    privateStore: {
+        type: Array,
+        required: true
+    },
+    reroll: {
         type: Number,
         required: true
     },
-    crowns: {
+    actionKey: {
+        type: Number,
+        required: true
+    },
+    moduleKey: {
+        type: Number,
+        required: true
+    },
+    modifierKey: {
+        type: Number,
+        required: true
+    },
+    banish: {
+        type: Number,
+        required: true
+    },
+    increase: {
         type: Number,
         required: true
     },

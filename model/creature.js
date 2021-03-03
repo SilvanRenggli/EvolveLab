@@ -63,11 +63,6 @@ const Creature = new mongoose.Schema({
         type: Number,
         required: [true]
     },
-    crystals: {
-        type: Number,
-        required: [true],
-        min: 0
-    },
     badges: {
         type: Array,
         required: [true],

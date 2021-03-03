@@ -183,7 +183,7 @@ function checkUserUpdate( newUserData, oldUserData) {
     if( oldUserData == null) return true
     return (
         newUserData.name === oldUserData.name &&
-        newUserData.depth - oldUserData.depth <= 1 &&
+        newUserData.map_row - oldUserData.map_row <= 1 &&
         newUserData.money[0] - oldUserData.money[0] <= 20 &&
         newUserData.money[1] - oldUserData.money[1] <= 20 &&
         newUserData.money[2] - oldUserData.money[2] <= 20
@@ -207,7 +207,6 @@ app.get("/load_user_data", authenticateToken, async(req, res) => {
 })
 
 app.get("/load_enemy", authenticateToken, async(req, res) => {
-    //loads all the user data from the server
     try{
         const filter = { _id: req.body.id }
         const data = await Creature.findOne(filter)
@@ -246,7 +245,6 @@ app.get("/get_scores", async (req, res) => {
 
 app.get("/get_creatures", async (req, res) => {
     try {
-        console.log("listening to depths")
         const creatures = await Creature.find({}).sort({depth: -1})
         res.send(creatures).status(200)
     }catch(e){
@@ -260,25 +258,15 @@ app.get("/get_depth_info", authenticateToken, async (req, res) => {
     const depth = req.body.depth
     var depthInfo = {
         endReached: false,
-        randomEnemy: [],
-        crystalEnemy: [],
         topCreatures: []
     }
     try{
-        //add a random creature to the body
-        depthInfo.randomEnemy = await Creature.aggregate([
+        var creature = await Creature.aggregate([
             { $match: { depth: depth } },
             { $sample: { size: 1 } }
         ])
-
         //check whether end was reached
-        depthInfo.endReached = ( depthInfo.randomEnemy.length == 0 )
-
-        //add a random creature with a crystal to the body if one exists at depth
-        depthInfo.crystalEnemy = await Creature.aggregate([
-            { $match: { depth: depth, crystals: { $gte: 3} } },
-            { $sample: {size: 1} }
-        ])
+        depthInfo.endReached = ( creature.length == 0 )
 
         //add the top three creatures to the body
         depthInfo.topCreatures = await Creature.find({ depth: depth, battlePoints: { $gte: 5 } }).sort({ battlePoints: -1 }).limit(3)
@@ -291,6 +279,94 @@ app.get("/get_depth_info", authenticateToken, async (req, res) => {
     
 });
 
+app.get("/get_map_info", async (req, res) => {
+    var max_creature = await Creature.find().sort({depth: -1}).limit(1)
+    if (!max_creature.length){
+        res.send({}).status(200)
+        return
+    } 
+    var max_depth = max_creature[0]["depth"]
+    var map_info = []
+    for (var i = 1; i <= max_depth; i++){
+        var strong_creatures = await Creature.distinct( "type", { depth: i, battlePoints: {$gte: 5}})
+        var average_creatures = await Creature.distinct( "type", { depth: i, battlePoints: {$gt: -5, $lt: 5}} )
+        var weak_creatures = await Creature.distinct("type", {depth: i, battlePoints: {$lte: -5}})
+        var creature_types = await Creature.distinct( "type" , { depth: i} )
+        var depth_info = {}
+        depth_info["Strong"] = strong_creatures
+        depth_info["Average"] = average_creatures
+        depth_info["Weak"] = weak_creatures
+        depth_info["Types"] = creature_types
+        map_info.push(depth_info)
+
+    }
+    res.send(map_info).status(200)
+})
+
+app.get("/get_enemy", async (req, res) => {
+    const type = req.body.type
+    const diff = req.body.diff
+    const depth = req.body.depth
+    var enemy
+    if (type === "random"){
+        switch(diff){
+            case -1:
+                enemy = await Creature.aggregate([
+                    { $match: { depth: depth } },
+                    { $sample: { size: 1 } }
+                    ])
+                break
+            case 0:
+                enemy = await Creature.aggregate([
+                    { $match: { depth: depth , battlePoints: {$lte: -5}} },
+                    { $sample: { size: 1 } }
+                    ])
+                    break
+            case 1:
+                enemy = await Creature.aggregate([
+                    { $match: { depth: depth , battlePoints: {$gt: -5, $lt: 5}} },
+                    { $sample: { size: 1 } }
+                    ])
+                break
+            case 2:
+                enemy = await Creature.aggregate([
+                    { $match: { depth: depth , battlePoints: {$gte: 5}} },
+                    { $sample: { size: 1 } }
+                    ])
+                    break
+        }
+        res.send(enemy).status(200)
+        return
+    }
+    //request must be a creature type
+    switch(diff){
+        case -1:
+            enemy = await Creature.aggregate([
+                { $match: { depth: depth, type: type } },
+                { $sample: { size: 1 } }
+                ])
+            break
+        case 0:
+            enemy = await Creature.aggregate([
+                { $match: { depth: depth, type: type, battlePoints: {$lte: -5}} },
+                { $sample: { size: 1 } }
+                ])
+                break
+        case 1:
+            enemy = await Creature.aggregate([
+                { $match: { depth: depth, type: type, battlePoints: {$gt: -5, $lt: 5}} },
+                { $sample: { size: 1 } }
+                ])
+            break
+        case 2:
+            enemy = await Creature.aggregate([
+                { $match: { depth: depth, type: type, battlePoints: {$gte: 5}} },
+                { $sample: { size: 1 } }
+                ])
+                break
+    }
+    res.send(enemy).status(200)
+})
 
 app.post("/update_enemy", authenticateToken, async (req, res) => {
     //updates an enemy
@@ -301,11 +377,11 @@ app.post("/update_enemy", authenticateToken, async (req, res) => {
         if (won){
             if (badge){
                 await Creature.findOneAndUpdate( { _id : id }, {
-                    $inc : { "kills" : 1 , "battlePoints" : 1, "crystals" : 1}, 
+                    $inc : { "kills" : 1 , "battlePoints" : 1}, 
                     $push : { "badges" : badge}})
             }else{
                 await Creature.findOneAndUpdate( { _id : id }, {
-                    $inc : { "kills" : 1 , "battlePoints" : 1, "crystals" : 1} })
+                    $inc : { "kills" : 1 , "battlePoints" : 1} })
             }
         }else{
             var creature = await Creature.findOne({_id : id})
@@ -314,7 +390,7 @@ app.post("/update_enemy", authenticateToken, async (req, res) => {
             badges.pop()
             await Creature.findOneAndUpdate( { _id : id }, {
                 $inc : { "battlePoints" : -1 },
-                $set : {"crystals" : 0, "badges" : badges}
+                $set : { "badges" : badges}
             })
         }
         res.sendStatus(200)
