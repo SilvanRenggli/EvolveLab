@@ -290,7 +290,7 @@ app.get("/get_map_info", async (req, res) => {
     for (var i = 1; i <= max_depth; i++){
         var strong_creatures = await Creature.distinct( "type", { depth: i, battlePoints: {$gte: 5}})
         var average_creatures = await Creature.distinct( "type", { depth: i, battlePoints: {$gt: -5, $lt: 5}} )
-        var weak_creatures = await Creature.distinct("type", {depth: i, battlePoints: {$lte: -5}})
+        var weak_creatures = await Creature.distinct("type", {depth: i, battlePoints: {$lte: -3}})
         var creature_types = await Creature.distinct( "type" , { depth: i} )
         var depth_info = {}
         depth_info["Strong"] = strong_creatures
@@ -318,7 +318,7 @@ app.get("/get_enemy", async (req, res) => {
                 break
             case 0:
                 enemy = await Creature.aggregate([
-                    { $match: { depth: depth , battlePoints: {$lte: -5}} },
+                    { $match: { depth: depth , battlePoints: {$lte: -3}} },
                     { $sample: { size: 1 } }
                     ])
                     break
@@ -348,7 +348,7 @@ app.get("/get_enemy", async (req, res) => {
             break
         case 0:
             enemy = await Creature.aggregate([
-                { $match: { depth: depth, type: type, battlePoints: {$lte: -5}} },
+                { $match: { depth: depth, type: type, battlePoints: {$lte: -3}} },
                 { $sample: { size: 1 } }
                 ])
                 break
